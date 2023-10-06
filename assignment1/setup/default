@@ -51,6 +51,10 @@ server {
 		try_files $uri $uri/ =404;
 	}
 
+	location /json {
+		proxy_pass http://localhost:5000;
+	}
+
 	# pass PHP scripts to FastCGI server
 	#
 	#location ~ \.php$ {

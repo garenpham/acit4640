@@ -7,7 +7,7 @@ Requires=mysql.service
 Type=simple
 WorkingDirectory=/backend/src
 User=backend
-ExecStart=/backend/src/.venv/bin/gunicorn wsgi:app -b 0.0.0.0:5000
+ExecStart=/backend/.local/bin/gunicorn wsgi:app -b 0.0.0.0:5000
 Restart=always
 
 [Install]

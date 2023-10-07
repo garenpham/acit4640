@@ -4,14 +4,13 @@
 source state_file_ec2.txt
 
 # Find EC2 Public IPv4 DNS
+# REMOTE_HOST_IP=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
 REMOTE_HOST=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[0].Instances[0].PublicDnsName' --output text)
-REMOTE_HOST_IP=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-
 REMOTE_USER=ubuntu
 SSH_KEY_FILE=~/.ssh/acit_4640
 
 # Copy the setup file into the EC2
-scp -i $SSH_KEY_FILE -r setup $REMOTE_USER@$REMOTE_HOST:~/setup
+scp -r setup $REMOTE_USER@$REMOTE_HOST:~/setup
 
 ssh $REMOTE_HOST << EOF
   # Set up user, permisison, and install required apt packages

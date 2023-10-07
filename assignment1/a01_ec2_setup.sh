@@ -4,7 +4,7 @@
 source state_file_vpc.txt
 
 # Create EC2 instance
-ami_id=ami-04203cad30ceb4a0c
+ami_id=ami-04203cad30ceb4a0c # Ubuntu
 instance_type=t2.micro
 ssh_key_name=acit_4640
 instance_id=$(aws ec2 run-instances \

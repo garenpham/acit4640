@@ -47,9 +47,11 @@ EOF
 ssh $REMOTE_HOST "
   # MySQL configuration
   sudo mysql << DELIM
+    ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'Password';
+    DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
     CREATE DATABASE IF NOT EXISTS backend;
-    CREATE USER IF NOT EXISTS 'example'@'%' IDENTIFIED BY 'secure';
-    GRANT ALL PRIVILEGES ON backend.* TO 'example'@'%';
+    CREATE USER IF NOT EXISTS 'example'@'localhost' IDENTIFIED BY 'secure';
+    GRANT ALL PRIVILEGES ON backend.* TO 'example'@'localhost';
     FLUSH PRIVILEGES;
     USE backend;
     CREATE TABLE IF NOT EXISTS item (
@@ -63,11 +65,12 @@ ssh $REMOTE_HOST "
 
 ssh $REMOTE_HOST << EOF
   # Install python dependencies
-  cd /backend/src
-  sudo su -c "pip3 install --user --break-system-packages -r /backend/src/requirements.txt" -s /bin/sh backend
+
+  sudo su
+  
+  su -c "pip3 install --user --break-system-packages -r /backend/src/requirements.txt" -s /bin/sh backend
 
   # Python service
-  sudo su
 
   cp /backend/src/backend.service /etc/systemd/system/backend.service
 

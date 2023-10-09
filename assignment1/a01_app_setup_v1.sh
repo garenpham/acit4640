@@ -12,7 +12,7 @@ SSH_KEY_FILE=~/.ssh/acit_4640
 # Copy the setup file into the EC2
 scp -r setup $REMOTE_USER@$REMOTE_HOST:~/setup
 
-ssh $REMOTE_HOST << DELIMITER
+ssh $REMOTE_HOST << EOF
   # Set up user, permisison, and install required apt packages
   sudo su
 
@@ -38,10 +38,15 @@ ssh $REMOTE_HOST << DELIMITER
 
   # Copy the backend to /a01/app
   mkdir -p /a01/app ; cp /home/ubuntu/setup/backend/* /a01/app
+  mkdir -p src
   mkdir -p /backend/src ; cp /home/ubuntu/setup/backend/* /backend/src
 
+  exit
+EOF
+
+ssh $REMOTE_HOST "
   # MySQL configuration
-  mysql << "EOF"
+  sudo mysql << DELIM
     ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'Password';
     DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
     CREATE DATABASE IF NOT EXISTS backend;
@@ -55,43 +60,24 @@ ssh $REMOTE_HOST << DELIMITER
     PRIMARY KEY (bcit_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
     INSERT INTO backend.item (name, bcit_id) VALUES ('Tan','A01215507');
-    exit;
-EOF
+    DELIM;
+"
 
+ssh $REMOTE_HOST << EOF
   # Install python dependencies
+
+  sudo su
+  
   su -c "pip3 install --user --break-system-packages -r /backend/src/requirements.txt" -s /bin/sh backend
 
-  # Create the backend.service file
-  sudo tee /etc/systemd/system/backend.service << "EOF"
-[Unit] 
-Description=Backend application 4640 
-After=network.target 
-Requires=mysql.service
-
-[Service] 
-Type=simple 
-WorkingDirectory=/backend/src 
-User=backend 
-ExecStart=/backend/.local/bin/gunicorn wsgi:app -b 0.0.0.0:5000 
-Restart=always
-
-[Install] 
-WantedBy=multi-user.target
-EOF
-
   # Python service
+
+  cp /backend/src/backend.service /etc/systemd/system/backend.service
 
   systemctl daemon-reload
   systemctl enable backend
   systemctl start backend
 
-  # Copy nginx default file
-  # cp /home/ubuntu/setup/default /etc/nginx/sites-available/default && systemctl restart nginx
-
-  # Nginx default file. The format of sed is 's#pattern#replacement#'
-  sed -i 's#root /var/www/html;#root /a01/web_root;# ;/server_name _;/a\
-  location /json {\\
-    \tproxy_pass http:\/\/localhost:5000;\\
-  \t}' /etc/nginx/sites-available/default &&
-  systemctl restart nginx
-DELIMITER
+  # Copy nginx default file 
+  cp /home/ubuntu/setup/default /etc/nginx/sites-available/default && systemctl restart nginx
+EOF
